@@ -33,11 +33,55 @@ const initials = (name = '') => name.split(' ').map((x) => x[0]).join('').slice(
 const fmtDate = (date?: string | null) => date ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(new Date(date)) : 'No date';
 const errText = (error: unknown) => (error as { message?: string })?.message || 'Something went wrong. Please try again.';
 
+function usePageMeta(title: string, description: string) {
+  useEffect(() => {
+    document.title = `${title} · TaskFlow`;
+    const meta = document.querySelector('meta[name="description"]') ?? document.createElement('meta');
+    meta.setAttribute('name', 'description');
+    meta.setAttribute('content', description);
+    if (!meta.parentNode) document.head.appendChild(meta);
+  }, [title, description]);
+}
+
 function Logo({ dark = false }: { dark?: boolean }) {
   return <Link href="/" className={`flex items-center gap-2.5 font-display text-xl tracking-tight ${dark ? 'text-white' : 'text-foreground'}`} data-testid="link-logo">
     <span className="relative grid size-8 place-items-center rounded-lg bg-accent text-accent-foreground shadow-sm"><ArrowRight size={18} strokeWidth={3} /></span>
     <span>task<span className={dark ? 'text-accent' : 'text-secondary-foreground'}>flow</span></span>
   </Link>;
+}
+
+function PublicHeader() {
+  return <header className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-4 px-6 py-6">
+    <Logo />
+    <nav className="order-3 flex w-full items-center justify-center gap-5 text-xs text-muted-foreground sm:gap-8 sm:text-sm md:order-none md:w-auto" aria-label="Main navigation">
+      <Link href="/method" className="transition-colors hover:text-foreground" data-testid="link-method">The method</Link>
+      <Link href="/pricing" className="transition-colors hover:text-foreground" data-testid="link-pricing">Pricing</Link>
+      <Link href="/why-taskflow" className="transition-colors hover:text-foreground" data-testid="link-about">Why TaskFlow</Link>
+    </nav>
+    <div className="flex items-center gap-2">
+      <Link href="/login" className="rounded-lg px-3 py-2 text-sm font-semibold hover:bg-muted" data-testid="link-login">Sign in</Link>
+      <Link href="/signup" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:-translate-y-0.5" data-testid="link-signup">Start free</Link>
+    </div>
+  </header>;
+}
+
+function PublicFooter() {
+  return <footer className="bg-sidebar px-6 py-12 text-sidebar-foreground">
+    <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6">
+      <Logo dark />
+      <div className="flex items-center gap-5 text-sm text-sidebar-foreground/60">
+        <Link href="/method" className="hover:text-sidebar-foreground">The method</Link>
+        <Link href="/pricing" className="hover:text-sidebar-foreground">Pricing</Link>
+        <Link href="/why-taskflow" className="hover:text-sidebar-foreground">Why TaskFlow</Link>
+      </div>
+      <p className="font-mono text-[10px] uppercase tracking-widest text-sidebar-foreground/40">© 2026 TaskFlow</p>
+    </div>
+  </footer>;
+}
+
+function PublicPage({ children, title, description }: { children: ReactNode; title: string; description: string }) {
+  usePageMeta(title, description);
+  return <div className="min-h-[100dvh] bg-background text-foreground"><PublicHeader />{children}<PublicFooter /></div>;
 }
 
 function AuthGate({ children }: { children: ReactNode }) {
@@ -74,14 +118,113 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 function Landing() {
-  return <div className="min-h-[100dvh] overflow-hidden bg-background text-foreground"><header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6"><Logo /><nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex"><a href="#method" data-testid="link-method">The method</a><a href="#pricing" data-testid="link-pricing">Pricing</a><a href="#about" data-testid="link-about">Why TaskFlow</a></nav><div className="flex items-center gap-2"><Link href="/login" className="rounded-lg px-3 py-2 text-sm font-semibold hover:bg-muted" data-testid="link-login">Sign in</Link><Link href="/signup" className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:-translate-y-0.5" data-testid="link-signup">Start free</Link></div></header>
-    <section className="relative mx-auto grid max-w-7xl items-center gap-16 px-6 pb-24 pt-16 md:grid-cols-[1.05fr_.95fr] md:pb-32 md:pt-24"><div className="relative z-10 animate-drift-in"><p className="mb-6 flex items-center gap-2 font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground"><span className="size-2 rounded-full bg-accent" /> A calmer way to move</p><h1 className="max-w-3xl font-display text-6xl leading-[.94] tracking-[-.05em] md:text-8xl">Good work<br /><span className="text-secondary-foreground">has a rhythm.</span></h1><p className="mt-8 max-w-lg text-lg leading-relaxed text-muted-foreground">TaskFlow gives small teams a shared tempo — enough structure to keep moving, enough room to do your best work.</p><div className="mt-10 flex flex-wrap gap-3"><Link href="/signup" className="group flex items-center gap-3 rounded-xl bg-accent px-5 py-3.5 font-semibold text-accent-foreground shadow-[4px_4px_0_hsl(var(--primary))] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_hsl(var(--primary))]" data-testid="link-hero-start">Make space for momentum <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></Link><a href="#method" className="rounded-xl border border-border px-5 py-3.5 font-semibold hover:bg-muted" data-testid="link-hero-method">See how it works</a></div><div className="mt-14 flex items-center gap-3 text-sm text-muted-foreground"><div className="flex -space-x-2"><span className="grid size-8 place-items-center rounded-full border-2 border-background bg-[#D66E5E] text-xs font-bold text-white">ML</span><span className="grid size-8 place-items-center rounded-full border-2 border-background bg-[#3D8A77] text-xs font-bold text-white">AK</span><span className="grid size-8 place-items-center rounded-full border-2 border-background bg-[#5875A8] text-xs font-bold text-white">JR</span></div><span>Built for teams who care how work feels.</span></div></div><div className="taskflow-grid relative min-h-[430px] rounded-[2rem] border border-border bg-card p-5 shadow-[12px_12px_0_hsl(var(--secondary))] animate-rise-in delay-2 md:min-h-[520px]"><div className="absolute -right-5 -top-5 grid size-20 rotate-12 place-items-center rounded-2xl bg-accent font-display text-2xl shadow-lg">→</div><div className="rounded-xl border border-border bg-background/90 p-4 shadow-lg backdrop-blur"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Monday / 09:42</p><p className="mt-1 font-display text-xl">Studio launch</p></div><MoreHorizontal size={18} className="text-muted-foreground" /></div><div className="mt-5 flex items-center gap-3"><div className="h-2 flex-1 rounded-full bg-secondary"><div className="h-full w-[68%] rounded-full bg-secondary-foreground" /></div><span className="font-mono text-xs">68%</span></div></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-border bg-card p-4"><div className="flex items-center justify-between text-muted-foreground"><span className="font-mono text-[10px] uppercase tracking-wider">In motion</span><span className="size-2 rounded-full bg-accent" /></div><p className="mt-4 font-display text-4xl">12</p><p className="mt-1 text-xs text-muted-foreground">tasks this week</p></div><div className="rounded-xl border border-border bg-card p-4"><div className="flex items-center justify-between text-muted-foreground"><span className="font-mono text-[10px] uppercase tracking-wider">Clear wins</span><CheckCircle2 size={15} className="text-secondary-foreground" /></div><p className="mt-4 font-display text-4xl">08</p><p className="mt-1 text-xs text-muted-foreground">finished together</p></div></div><div className="absolute bottom-5 left-5 right-5 rounded-xl bg-sidebar p-4 text-sidebar-foreground shadow-xl"><p className="font-mono text-[10px] uppercase tracking-wider text-accent">A gentle nudge</p><p className="mt-2 text-sm">Three small wins are waiting in your board.</p></div></div></section>
-    <section id="method" className="border-y border-border bg-secondary/30 px-6 py-24"><div className="mx-auto max-w-7xl"><p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">The TaskFlow method</p><div className="mt-8 grid gap-12 md:grid-cols-[.8fr_1.2fr]"><h2 className="max-w-lg font-display text-5xl leading-[.98] tracking-[-.04em] md:text-6xl">Clarity is a team sport.</h2><div className="grid gap-8 md:grid-cols-3"><div><span className="font-mono text-sm text-secondary-foreground">01</span><h3 className="mt-4 font-display text-2xl">See the whole</h3><p className="mt-3 leading-relaxed text-muted-foreground">One generous view of everything in motion, without the noise.</p></div><div><span className="font-mono text-sm text-secondary-foreground">02</span><h3 className="mt-4 font-display text-2xl">Choose the next</h3><p className="mt-3 leading-relaxed text-muted-foreground">Small, clear priorities keep the important work in front.</p></div><div><span className="font-mono text-sm text-secondary-foreground">03</span><h3 className="mt-4 font-display text-2xl">Move as one</h3><p className="mt-3 leading-relaxed text-muted-foreground">Everyone knows where to help, and when to celebrate.</p></div></div></div></div></section>
-    <section id="pricing" className="mx-auto max-w-7xl px-6 py-24"><div className="flex flex-wrap items-end justify-between gap-6"><div><p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">Simple pricing</p><h2 className="mt-4 font-display text-5xl tracking-[-.04em]">Room to grow.</h2></div><p className="max-w-sm text-muted-foreground">Start with the essentials. Bring your whole crew when the time is right.</p></div><div className="mt-12 grid gap-4 md:grid-cols-3"><Price name="Free" price="$0" copy="For small beginnings" features={['Unlimited tasks', '1 active project', 'Personal workspace']} /><Price name="Pro" price="$12" copy="For focused makers" accent features={['Unlimited projects', 'Team collaboration', 'Project insights']} /><Price name="Team" price="$24" copy="For teams in stride" features={['Everything in Pro', 'Unlimited teammates', 'Priority support']} /></div></section>
-    <footer id="about" className="bg-sidebar px-6 py-12 text-sidebar-foreground"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6"><Logo dark /><p className="text-sm text-sidebar-foreground/60">Work that feels like yours.</p><p className="font-mono text-[10px] uppercase tracking-widest text-sidebar-foreground/40">© 2024 TaskFlow</p></div></footer>
+  usePageMeta('A calmer way to move', 'TaskFlow gives small teams a shared tempo — enough structure to keep moving, enough room to do your best work.');
+  return <div className="min-h-[100dvh] overflow-hidden bg-background text-foreground"><PublicHeader />
+    <section className="relative mx-auto grid max-w-7xl items-center gap-16 px-6 pb-24 pt-16 md:grid-cols-[1.05fr_.95fr] md:pb-32 md:pt-24"><div className="relative z-10 animate-drift-in"><p className="mb-6 flex items-center gap-2 font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground"><span className="size-2 rounded-full bg-accent" /> A calmer way to move</p><h1 className="max-w-3xl font-display text-6xl leading-[.94] tracking-[-.05em] md:text-8xl">Good work<br /><span className="text-secondary-foreground">has a rhythm.</span></h1><p className="mt-8 max-w-lg text-lg leading-relaxed text-muted-foreground">TaskFlow gives small teams a shared tempo — enough structure to keep moving, enough room to do your best work.</p><div className="mt-10 flex flex-wrap gap-3"><Link href="/signup" className="group flex items-center gap-3 rounded-xl bg-accent px-5 py-3.5 font-semibold text-accent-foreground shadow-[4px_4px_0_hsl(var(--primary))] transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_hsl(var(--primary))]" data-testid="link-hero-start">Make space for momentum <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></Link><Link href="/method" className="rounded-xl border border-border px-5 py-3.5 font-semibold hover:bg-muted" data-testid="link-hero-method">See how it works</Link></div><div className="mt-14 flex items-center gap-3 text-sm text-muted-foreground"><div className="flex -space-x-2"><span className="grid size-8 place-items-center rounded-full border-2 border-background bg-[#D66E5E] text-xs font-bold text-white">ML</span><span className="grid size-8 place-items-center rounded-full border-2 border-background bg-[#3D8A77] text-xs font-bold text-white">AK</span><span className="grid size-8 place-items-center rounded-full border-2 border-background bg-[#5875A8] text-xs font-bold text-white">JR</span></div><span>Built for teams who care how work feels.</span></div></div><div className="taskflow-grid relative min-h-[430px] rounded-[2rem] border border-border bg-card p-5 shadow-[12px_12px_0_hsl(var(--secondary))] animate-rise-in delay-2 md:min-h-[520px]"><div className="absolute -right-5 -top-5 grid size-20 rotate-12 place-items-center rounded-2xl bg-accent font-display text-2xl shadow-lg">→</div><div className="rounded-xl border border-border bg-background/90 p-4 shadow-lg backdrop-blur"><div className="flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Monday / 09:42</p><p className="mt-1 font-display text-xl">Studio launch</p></div><MoreHorizontal size={18} className="text-muted-foreground" /></div><div className="mt-5 flex items-center gap-3"><div className="h-2 flex-1 rounded-full bg-secondary"><div className="h-full w-[68%] rounded-full bg-secondary-foreground" /></div><span className="font-mono text-xs">68%</span></div></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-border bg-card p-4"><div className="flex items-center justify-between text-muted-foreground"><span className="font-mono text-[10px] uppercase tracking-wider">In motion</span><span className="size-2 rounded-full bg-accent" /></div><p className="mt-4 font-display text-4xl">12</p><p className="mt-1 text-xs text-muted-foreground">tasks this week</p></div><div className="rounded-xl border border-border bg-card p-4"><div className="flex items-center justify-between text-muted-foreground"><span className="font-mono text-[10px] uppercase tracking-wider">Clear wins</span><CheckCircle2 size={15} className="text-secondary-foreground" /></div><p className="mt-4 font-display text-4xl">08</p><p className="mt-1 text-xs text-muted-foreground">finished together</p></div></div><div className="absolute bottom-5 left-5 right-5 rounded-xl bg-sidebar p-4 text-sidebar-foreground shadow-xl"><p className="font-mono text-[10px] uppercase tracking-wider text-accent">A gentle nudge</p><p className="mt-2 text-sm">Three small wins are waiting in your board.</p></div></div></section>
+    <section className="border-y border-border bg-secondary/30 px-6 py-24"><div className="mx-auto max-w-7xl"><p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">The TaskFlow method</p><div className="mt-8 grid gap-12 md:grid-cols-[.8fr_1.2fr]"><h2 className="max-w-lg font-display text-5xl leading-[.98] tracking-[-.04em] md:text-6xl">Clarity is a team sport.</h2><div className="grid gap-8 md:grid-cols-3"><div><span className="font-mono text-sm text-secondary-foreground">01</span><h3 className="mt-4 font-display text-2xl">See the whole</h3><p className="mt-3 leading-relaxed text-muted-foreground">One generous view of everything in motion, without the noise.</p></div><div><span className="font-mono text-sm text-secondary-foreground">02</span><h3 className="mt-4 font-display text-2xl">Choose the next</h3><p className="mt-3 leading-relaxed text-muted-foreground">Small, clear priorities keep the important work in front.</p></div><div><span className="font-mono text-sm text-secondary-foreground">03</span><h3 className="mt-4 font-display text-2xl">Move as one</h3><p className="mt-3 leading-relaxed text-muted-foreground">Everyone knows where to help, and when to celebrate.</p></div></div></div></div></section>
+    <section className="mx-auto max-w-7xl px-6 py-24"><div className="flex flex-wrap items-end justify-between gap-6"><div><p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">Simple pricing</p><h2 className="mt-4 font-display text-5xl tracking-[-.04em]">Room to grow.</h2></div><p className="max-w-sm text-muted-foreground">Start with the essentials. Bring your whole crew when the time is right.</p></div><div className="mt-12 grid gap-4 md:grid-cols-3"><Price name="Free" price="$0" copy="For small beginnings" features={['Unlimited tasks', '1 active project', 'Personal workspace']} /><Price name="Pro" price="$12" copy="For focused makers" accent features={['Unlimited projects', 'Team collaboration', 'Project insights']} /><Price name="Team" price="$24" copy="For teams in stride" features={['Everything in Pro', 'Unlimited teammates', 'Priority support']} /></div></section>
+    <PublicFooter />
   </div>;
 }
 function Price({ name, price, copy, features, accent = false }: { name: string; price: string; copy: string; features: string[]; accent?: boolean }) { return <div className={`rounded-2xl border p-7 ${accent ? 'border-primary bg-primary text-primary-foreground shadow-[8px_8px_0_hsl(var(--accent))]' : 'border-border bg-card'}`}><div className="flex items-center justify-between"><h3 className="font-display text-2xl">{name}</h3>{accent && <Badge className="bg-accent text-accent-foreground">Most loved</Badge>}</div><p className={`mt-2 text-sm ${accent ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{copy}</p><p className="mt-8 font-display text-5xl">{price}<span className="font-sans text-sm font-normal opacity-60"> / month</span></p><ul className="mt-8 space-y-3 text-sm">{features.map((f) => <li key={f} className="flex items-center gap-2"><Check size={15} className="text-accent" /> {f}</li>)}</ul><Link href="/signup" className={`mt-8 block rounded-lg px-4 py-3 text-center text-sm font-semibold ${accent ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-secondary'}`} data-testid={`link-price-${name.toLowerCase()}`}>Choose {name}</Link></div>; }
+
+function MethodPage() {
+  return <PublicPage title="The method" description="See how TaskFlow turns scattered work into a calm, shared rhythm for small teams.">
+    <main>
+      <section className="border-b border-border bg-secondary/30 px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">The TaskFlow method</p>
+          <div className="mt-7 grid gap-10 md:grid-cols-[1fr_.8fr] md:items-end">
+            <h1 className="max-w-4xl font-display text-6xl leading-[.95] tracking-[-.05em] md:text-8xl">Make progress<br /><span className="text-secondary-foreground">feel possible.</span></h1>
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">TaskFlow is built around a simple idea: teams do their best work when the next step is visible, shared, and small enough to start.</p>
+          </div>
+        </div>
+      </section>
+      <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            ['01', 'See the whole', 'Bring projects, tasks, and team context into one generous view. Less hunting means more attention for the work itself.'],
+            ['02', 'Choose the next', 'Turn a big ambition into a short list of clear moves. Priorities stay visible without turning the day into a spreadsheet.'],
+            ['03', 'Move as one', 'Give everyone the same rhythm: ownership is clear, handoffs are lighter, and finished work gets noticed.'],
+          ].map(([number, title, copy]) => <Card key={number} className="border-border/70 bg-card shadow-none">
+            <CardContent className="p-7">
+              <span className="font-mono text-sm text-secondary-foreground">{number}</span>
+              <h2 className="mt-12 font-display text-3xl tracking-[-.03em]">{title}</h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">{copy}</p>
+            </CardContent>
+          </Card>)}
+        </div>
+        <div className="mt-20 grid gap-10 rounded-[2rem] bg-sidebar p-8 text-sidebar-foreground md:grid-cols-[.8fr_1.2fr] md:p-12">
+          <div><p className="font-mono text-xs uppercase tracking-[.2em] text-accent">A weekly rhythm</p><h2 className="mt-5 font-display text-4xl leading-tight">Enough structure to start. Enough space to think.</h2></div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {['Set the focus', 'Make the move', 'Mark the win'].map((label, index) => <div key={label} className="rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-5"><span className="font-mono text-xs text-accent">0{index + 1}</span><p className="mt-10 font-semibold">{label}</p><p className="mt-2 text-sm leading-relaxed text-sidebar-foreground/60">{['Choose what matters this week.', 'Keep the next action easy to find.', 'Close the loop together.'][index]}</p></div>)}
+          </div>
+        </div>
+        <div className="mt-20 flex flex-wrap items-center justify-between gap-5 border-t border-border pt-8"><p className="font-display text-2xl">Ready to find your rhythm?</p><Link href="/signup" className="group flex items-center gap-3 rounded-xl bg-accent px-5 py-3.5 font-semibold text-accent-foreground shadow-[4px_4px_0_hsl(var(--primary))]">Start free <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></Link></div>
+      </section>
+    </main>
+  </PublicPage>;
+}
+
+function PricingPage() {
+  return <PublicPage title="Pricing" description="Simple TaskFlow plans for small beginnings, focused makers, and teams in stride.">
+    <main>
+      <section className="border-b border-border px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">Simple pricing</p>
+          <div className="mt-7 flex flex-wrap items-end justify-between gap-8">
+            <h1 className="max-w-3xl font-display text-6xl leading-[.95] tracking-[-.05em] md:text-8xl">Room<br /><span className="text-secondary-foreground">to grow.</span></h1>
+            <p className="max-w-md text-lg leading-relaxed text-muted-foreground">Start with the essentials. Upgrade when your team needs more room, not more complexity.</p>
+          </div>
+        </div>
+      </section>
+      <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Price name="Free" price="$0" copy="For small beginnings" features={['Unlimited tasks', '1 active project', 'Personal workspace']} />
+          <Price name="Pro" price="$12" copy="For focused makers" accent features={['Unlimited projects', 'Team collaboration', 'Project insights']} />
+          <Price name="Team" price="$24" copy="For teams in stride" features={['Everything in Pro', 'Unlimited teammates', 'Priority support']} />
+        </div>
+        <div className="mt-16 grid gap-4 border-y border-border py-10 text-sm md:grid-cols-3">
+          <div><p className="font-semibold">No hidden surprises</p><p className="mt-2 leading-relaxed text-muted-foreground">Your plan is clear from day one. No setup fees, no long-term contract.</p></div>
+          <div><p className="font-semibold">Start at your pace</p><p className="mt-2 leading-relaxed text-muted-foreground">Every plan starts with a free workspace so you can feel the difference before committing.</p></div>
+          <div><p className="font-semibold">Built for momentum</p><p className="mt-2 leading-relaxed text-muted-foreground">Move up when your team needs more collaborators, projects, and support.</p></div>
+        </div>
+        <div className="mt-16 rounded-[2rem] bg-secondary/50 px-6 py-12 text-center md:px-12"><p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">Start with the essentials</p><h2 className="mx-auto mt-4 max-w-2xl font-display text-4xl tracking-[-.04em] md:text-5xl">A calmer workspace is one click away.</h2><Link href="/signup" className="mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground">Create your free workspace <ArrowRight size={17} /></Link></div>
+      </section>
+    </main>
+  </PublicPage>;
+}
+
+function WhyTaskFlowPage() {
+  return <PublicPage title="Why TaskFlow" description="TaskFlow helps small teams stay clear, focused, and in motion without adding more noise.">
+    <main>
+      <section className="border-b border-border bg-sidebar px-6 py-20 text-sidebar-foreground md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <p className="font-mono text-xs uppercase tracking-[.2em] text-accent">Why TaskFlow</p>
+          <div className="mt-7 grid gap-10 md:grid-cols-[1fr_.8fr] md:items-end">
+            <h1 className="max-w-4xl font-display text-6xl leading-[.95] tracking-[-.05em] md:text-8xl">Work better<br /><span className="text-accent">together.</span></h1>
+            <p className="max-w-md text-lg leading-relaxed text-sidebar-foreground/65">The best project tool is the one your team actually wants to open. TaskFlow keeps the useful parts and leaves the noise behind.</p>
+          </div>
+        </div>
+      </section>
+      <section className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+        <div className="grid gap-12 md:grid-cols-2">
+          <div><p className="font-mono text-xs uppercase tracking-[.2em] text-secondary-foreground">Less overhead</p><h2 className="mt-5 font-display text-4xl leading-tight md:text-5xl">Your tool should make the work lighter.</h2><p className="mt-5 max-w-lg leading-relaxed text-muted-foreground">TaskFlow gives your team a shared source of truth without forcing every idea into a workflow. Create a project, choose the next task, and keep moving.</p></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              ['Clear by default', 'A focused dashboard keeps the important work in view.'],
+              ['Friendly to teams', 'Roles, invitations, and ownership make collaboration feel natural.'],
+              ['Useful every day', 'Kanban boards turn planning into a visible, satisfying rhythm.'],
+              ['Room for your style', 'A calm interface leaves space for your team’s way of working.'],
+            ].map(([title, copy]) => <div key={title} className="rounded-2xl border border-border bg-card p-6"><span className="grid size-9 place-items-center rounded-lg bg-secondary text-secondary-foreground"><Check size={17} /></span><h3 className="mt-7 font-display text-xl">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy}</p></div>)}
+          </div>
+        </div>
+        <div className="mt-20 border-y border-border py-12 md:py-16"><div className="grid gap-8 md:grid-cols-3"><div><p className="font-display text-5xl text-secondary-foreground">01</p><p className="mt-4 font-semibold">Small teams, first</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">Made for the people doing the work, not just reporting on it.</p></div><div><p className="font-display text-5xl text-secondary-foreground">02</p><p className="mt-4 font-semibold">Progress you can feel</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">A little momentum is easier to build when everyone can see it.</p></div><div><p className="font-display text-5xl text-secondary-foreground">03</p><p className="mt-4 font-semibold">Less noise, more signal</p><p className="mt-2 text-sm leading-relaxed text-muted-foreground">The right amount of structure helps good work stay good.</p></div></div></div>
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-6 rounded-[2rem] bg-accent p-8 text-accent-foreground md:p-12"><div><p className="font-mono text-xs uppercase tracking-[.2em]">A better workday starts here</p><h2 className="mt-4 font-display text-4xl tracking-[-.04em] md:text-5xl">Make room for momentum.</h2></div><Link href="/signup" className="group flex items-center gap-3 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground">Start free <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></Link></div>
+      </section>
+    </main>
+  </PublicPage>;
+}
 
 function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const [, setLocation] = useLocation(); const { toast } = useToast(); const mutation = mode === 'login' ? useLogin() : useSignup(); const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -120,6 +263,6 @@ function Teams() { const { data: teams = [], isLoading } = useListTeams({ query:
 
 function SettingsPage() { const { data: user } = useGetCurrentUser({ query: { queryKey: getGetCurrentUserQueryKey() } }); const update = useUpdateProfile(); const { toast } = useToast(); const [name, setName] = useState(''); const [email, setEmail] = useState(''); useEffect(() => { if (user) { setName(user.name); setEmail(user.email); } }, [user]); const save = () => update.mutate({ data: { name, email } }, { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() }); toast({ title: 'Profile saved', description: 'Your workspace knows you a little better.' }); }, onError: (e) => toast({ title: 'Could not save profile', description: errText(e), variant: 'destructive' }) }); return <Shell><PageTitle eyebrow="Your preferences" title="Settings" /><div className="mt-10 max-w-3xl space-y-6"><Card className="border-border/70 shadow-none"><CardHeader><CardTitle className="font-display text-2xl">Profile</CardTitle><p className="text-sm text-muted-foreground">How your name appears across TaskFlow.</p></CardHeader><CardContent className="grid gap-5 sm:grid-cols-2"><div className="sm:col-span-2 flex items-center gap-4"><Avatar className="size-16"><AvatarImage src={user?.avatar} /><AvatarFallback className="bg-secondary text-secondary-foreground text-lg">{initials(user?.name)}</AvatarFallback></Avatar><div><p className="font-semibold">{user?.name}</p><p className="text-sm text-muted-foreground">Profile photo is managed by your workspace.</p></div></div><Field label="Full name" value={name} onChange={setName} placeholder="Your name" test="input-settings-name" /><Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@company.com" test="input-settings-email" /><div className="sm:col-span-2"><Button onClick={save} disabled={update.isPending} className="bg-primary text-primary-foreground" data-testid="button-save-profile">{update.isPending ? 'Saving…' : 'Save profile'}</Button></div></CardContent></Card><Card className="border-border/70 shadow-none"><CardHeader><CardTitle className="font-display text-2xl">Billing</CardTitle><p className="text-sm text-muted-foreground">Plans are intentionally simple. You’re currently on the Free plan.</p></CardHeader><CardContent><div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-secondary/60 p-4"><div><p className="font-semibold">Free workspace</p><p className="mt-1 text-sm text-muted-foreground">Unlimited clarity for starting teams.</p></div><Button variant="outline" disabled data-testid="button-manage-billing">Manage billing</Button></div></CardContent></Card></div></Shell>; }
 
-function AppRouter() { return <Switch><Route path="/" component={Landing} /><Route path="/login"><AuthPage mode="login" /></Route><Route path="/signup"><AuthPage mode="signup" /></Route><Route path="/dashboard"><AuthGate><Dashboard /></AuthGate></Route><Route path="/projects/:projectId"><AuthGate><ProjectDetail /></AuthGate></Route><Route path="/teams"><AuthGate><Teams /></AuthGate></Route><Route path="/settings"><AuthGate><SettingsPage /></AuthGate></Route><Route component={NotFound} /></Switch>; }
+function AppRouter() { return <Switch><Route path="/" component={Landing} /><Route path="/method" component={MethodPage} /><Route path="/pricing" component={PricingPage} /><Route path="/why-taskflow" component={WhyTaskFlowPage} /><Route path="/login"><AuthPage mode="login" /></Route><Route path="/signup"><AuthPage mode="signup" /></Route><Route path="/dashboard"><AuthGate><Dashboard /></AuthGate></Route><Route path="/projects/:projectId"><AuthGate><ProjectDetail /></AuthGate></Route><Route path="/teams"><AuthGate><Teams /></AuthGate></Route><Route path="/settings"><AuthGate><SettingsPage /></AuthGate></Route><Route component={NotFound} /></Switch>; }
 function App() { return <QueryClientProvider client={queryClient}><TooltipProvider><AppRouter /><Toaster /></TooltipProvider></QueryClientProvider>; }
 export default App;

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, Redirect, Route, Switch, useLocation, useParams } from 'wouter';
 import { Toaster } from '@/components/ui/toaster';
@@ -91,29 +91,84 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function ProfileMenu({ user, dark = false }: { user?: { name: string; email: string; avatar?: string | null }; dark?: boolean }) {
+  const [, setLocation] = useLocation();
+  const logout = useLogout();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, [menuOpen]);
+  const signOut = () => logout.mutate(undefined, { onSuccess: () => { queryClient.clear(); window.location.href = '/'; } });
+  const goTo = (href: string) => { setMenuOpen(false); setLocation(href); };
+  return <div ref={menuRef} className={`relative ${dark ? 'w-full' : ''}`}>
+      {dark ? <button type="button" onClick={() => setMenuOpen((open) => !open)} className="flex w-full items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-3 text-left outline-none transition-colors hover:bg-sidebar-accent/80 focus-visible:ring-2 focus-visible:ring-accent" aria-expanded={menuOpen} data-testid="button-sidebar-profile">
+        <Avatar className="size-9 border border-sidebar-border"><AvatarImage src={user?.avatar ?? undefined} /><AvatarFallback className="bg-accent text-accent-foreground">{initials(user?.name)}</AvatarFallback></Avatar>
+        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold" data-testid="text-sidebar-user">{user?.name}</span><span className="block truncate text-xs text-sidebar-foreground/60">{user?.email}</span></span>
+        <ChevronDown className="size-4 text-sidebar-foreground/60" />
+      </button> : <Button variant="ghost" size="icon" onClick={() => setMenuOpen((open) => !open)} className="rounded-full" aria-label="Open profile menu" aria-expanded={menuOpen} data-testid="button-navbar-profile">
+        <Avatar className="size-8"><AvatarImage src={user?.avatar ?? undefined} /><AvatarFallback className="bg-secondary text-secondary-foreground text-xs">{initials(user?.name)}</AvatarFallback></Avatar>
+      </Button>}
+      {menuOpen && <div role="menu" className={`absolute z-50 mt-2 w-60 overflow-hidden rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg ${dark ? 'left-0' : 'right-0'}`} data-testid="profile-menu">
+        <div className="px-3 py-2.5"><p className="text-sm font-semibold">{user?.name || 'Your profile'}</p><p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p></div>
+        <div className="my-1 h-px bg-muted" />
+        <button type="button" role="menuitem" onClick={() => goTo('/settings')} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:bg-muted" data-testid="menu-profile-settings"><Settings size={16} /> Profile & settings</button>
+        <button type="button" role="menuitem" onClick={signOut} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-destructive outline-none transition-colors hover:bg-destructive/10 focus-visible:bg-destructive/10" data-testid="menu-profile-signout"><LogOut size={16} /> Sign out</button>
+      </div>}
+    </div>;
+}
+
+function SearchDialog({ open, onOpenChange, projects }: { open: boolean; onOpenChange: (open: boolean) => void; projects: Project[] }) {
+  const [, setLocation] = useLocation();
+  const [query, setQuery] = useState('');
+  const quickLinks = [
+    { label: 'Overview', description: 'See your workspace dashboard', href: '/dashboard' },
+    { label: 'Teams', description: 'Manage people and permissions', href: '/teams' },
+    { label: 'Settings', description: 'Update your profile and preferences', href: '/settings' },
+  ];
+  const normalized = query.trim().toLowerCase();
+  const projectResults = projects.filter((project) => `${project.name} ${project.description || ''}`.toLowerCase().includes(normalized)).slice(0, 6);
+  const quickResults = quickLinks.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(normalized));
+  const go = (href: string) => { onOpenChange(false); setQuery(''); setLocation(href); };
+  return <Dialog open={open} onOpenChange={(nextOpen) => { onOpenChange(nextOpen); if (!nextOpen) setQuery(''); }}>
+    <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
+      <DialogHeader className="border-b border-border px-5 py-4">
+        <DialogTitle className="flex items-center gap-2 font-display text-2xl"><Search size={19} className="text-secondary-foreground" /> Search workspace</DialogTitle>
+      </DialogHeader>
+      <div className="border-b border-border p-4"><Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects or workspace pages…" className="h-11 bg-muted/40" data-testid="input-global-search" /></div>
+      <div className="max-h-[min(55vh,420px)] overflow-y-auto p-3">
+        {quickResults.length > 0 && <div><p className="px-2 pb-2 font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">Workspace</p>{quickResults.map((item) => <button key={item.href} type="button" onClick={() => go(item.href)} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted" data-testid={`search-result-${item.label.toLowerCase()}`}><span className="grid size-8 place-items-center rounded-lg bg-secondary text-secondary-foreground"><LayoutDashboard size={15} /></span><span><span className="block text-sm font-semibold">{item.label}</span><span className="block text-xs text-muted-foreground">{item.description}</span></span></button>)}</div>}
+        {projectResults.length > 0 && <div className={quickResults.length > 0 ? 'mt-4' : ''}><p className="px-2 pb-2 font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">Projects</p>{projectResults.map((project) => <button key={project.id} type="button" onClick={() => go(`/projects/${project.id}`)} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted" data-testid={`search-result-project-${project.id}`}><span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="min-w-0"><span className="block truncate text-sm font-semibold">{project.name}</span><span className="block truncate text-xs text-muted-foreground">{project.description || `${project.taskCount} tasks in this project`}</span></span><ArrowRight size={15} className="ml-auto shrink-0 text-muted-foreground" /></button>)}</div>}
+        {quickResults.length === 0 && projectResults.length === 0 && <div className="px-4 py-10 text-center"><Search size={22} className="mx-auto text-muted-foreground" /><p className="mt-3 font-semibold">No matches found</p><p className="mt-1 text-sm text-muted-foreground">Try a project name or a workspace page.</p></div>}
+      </div>
+    </DialogContent>
+  </Dialog>;
+}
+
 function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
   const { data: user } = useGetCurrentUser({ query: { queryKey: getGetCurrentUserQueryKey(), retry: false } });
-  const logout = useLogout();
+  const { data: projects = [] } = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
+  const [searchOpen, setSearchOpen] = useState(false);
   const nav = [{ href: '/dashboard', label: 'Overview', icon: LayoutDashboard }, { href: '/teams', label: 'Teams', icon: Users }, { href: '/settings', label: 'Settings', icon: Settings }];
   return <div className="grain flex min-h-[100dvh] bg-background">
     <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar px-5 py-6 text-sidebar-foreground transition-transform md:relative md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
       <Logo dark />
-      <div className="mt-12 flex items-center gap-3 rounded-xl bg-sidebar-accent px-3 py-3">
-        <Avatar className="size-9 border border-sidebar-border"><AvatarImage src={user?.avatar} /><AvatarFallback className="bg-accent text-accent-foreground">{initials(user?.name)}</AvatarFallback></Avatar>
-        <div className="min-w-0"><p className="truncate text-sm font-semibold" data-testid="text-sidebar-user">{user?.name}</p><p className="truncate text-xs text-sidebar-foreground/60">{user?.email}</p></div>
-        <ChevronDown className="ml-auto size-4 text-sidebar-foreground/60" />
-      </div>
+      <div className="mt-12"><ProfileMenu user={user} dark /></div>
       <nav className="mt-9 space-y-1">
         <p className="mb-3 px-3 font-mono text-[10px] uppercase tracking-[.2em] text-sidebar-foreground/45">Workspace</p>
         {nav.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setOpen(false)} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${location === href ? 'bg-sidebar-primary font-semibold text-sidebar-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`} data-testid={`link-nav-${label.toLowerCase()}`}><Icon size={17} />{label}</Link>)}
       </nav>
       <div className="mt-auto rounded-xl border border-sidebar-border bg-sidebar-accent/50 p-4"><Sparkles size={17} className="text-accent" /><p className="mt-3 text-sm font-semibold">Your week, in focus.</p><p className="mt-1 text-xs leading-relaxed text-sidebar-foreground/60">A little progress every day adds up.</p></div>
-      <Button variant="ghost" className="mt-4 justify-start gap-3 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground" onClick={() => logout.mutate(undefined, { onSuccess: () => { queryClient.clear(); window.location.href = '/'; } })} data-testid="button-logout"><LogOut size={16} />Sign out</Button>
     </aside>
     {open && <button className="fixed inset-0 z-30 bg-foreground/30 md:hidden" onClick={() => setOpen(false)} aria-label="Close menu" data-testid="button-close-menu" />}
-    <main className="min-w-0 flex-1"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border/70 bg-background/90 px-5 backdrop-blur md:px-9"><Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(true)} data-testid="button-open-menu"><Menu size={20} /></Button><div className="hidden items-center gap-2 text-sm text-muted-foreground md:flex"><span className="font-mono text-[11px] uppercase tracking-[.16em]">Workspace</span><span>/</span><span className="text-foreground">{location === '/dashboard' ? 'Overview' : location.replace('/', '').replace('-', ' ')}</span></div><div className="ml-auto flex items-center gap-2"><Button variant="ghost" size="icon" className="text-muted-foreground" data-testid="button-search"><Search size={18} /></Button><Avatar className="size-8"><AvatarImage src={user?.avatar} /><AvatarFallback className="bg-secondary text-secondary-foreground text-xs">{initials(user?.name)}</AvatarFallback></Avatar></div></header><div className="mx-auto max-w-[1500px] p-5 md:p-9">{children}</div></main>
+    <main className="min-w-0 flex-1"><header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border/70 bg-background/90 px-5 backdrop-blur md:px-9"><Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(true)} data-testid="button-open-menu"><Menu size={20} /></Button><div className="hidden items-center gap-2 text-sm text-muted-foreground md:flex"><span className="font-mono text-[11px] uppercase tracking-[.16em]">Workspace</span><span>/</span><span className="text-foreground">{location === '/dashboard' ? 'Overview' : location.replace('/', '').replace('-', ' ')}</span></div><div className="ml-auto flex items-center gap-2"><Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => setSearchOpen(true)} aria-label="Search workspace" data-testid="button-search"><Search size={18} /></Button><ProfileMenu user={user} /></div></header><div className="mx-auto max-w-[1500px] p-5 md:p-9">{children}</div><SearchDialog open={searchOpen} onOpenChange={setSearchOpen} projects={projects} /></main>
   </div>;
 }
 

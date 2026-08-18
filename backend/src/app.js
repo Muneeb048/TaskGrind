@@ -15,7 +15,18 @@ app.use(morgan("dev"));
 // CORS — allow frontend origin (adjust in production)
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+      
+      // Allow the configured origin, or any vercel.app subdomain
+      if (origin === allowedOrigin || origin.endsWith('.vercel.app') || origin === 'http://localhost:5173') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );

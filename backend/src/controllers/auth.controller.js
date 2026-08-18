@@ -37,7 +37,7 @@ export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) {
+  if (!user || !user.passwordHash) {
     throw ApiError.unauthorized("Email or password is incorrect");
   }
 

@@ -1,8 +1,4 @@
 import mongoose from "mongoose";
-import dns from "node:dns";
-
-// Fix Node.js DNS resolution on Windows for mongodb+srv URIs
-dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
